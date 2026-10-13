@@ -99,7 +99,9 @@ public sealed class SettingsForm : Form
 
         _colorButton.Click += (_, _) => PickColor();
         apply.Click += (_, _) => ConfigApplied?.Invoke(BuildConfig());
-        ok.Click += (_, _) => ConfigApplied?.Invoke(BuildConfig());
+        // Shown modelessly via Form.Show(), so DialogResult won't auto-close — close explicitly.
+        ok.Click += (_, _) => { ConfigApplied?.Invoke(BuildConfig()); Close(); };
+        cancel.Click += (_, _) => Close();
         AcceptButton = ok;
         CancelButton = cancel;
 
