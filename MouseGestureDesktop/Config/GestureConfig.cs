@@ -30,9 +30,6 @@ public sealed class GestureConfig
     /// <summary>Horizontal travel (px) from origin required to enter gesture mode.</summary>
     public int MoveThreshold { get; set; } = 12;
 
-    /// <summary>Px of locked-axis travel per one desktop switch (continuous stepping).</summary>
-    public int StepDistance { get; set; } = 90;
-
     /// <summary>Hold durations under this (ms) with no step still resolve to a click; informational for tuning.</summary>
     public int ClickMaxDuration { get; set; } = 220;
 

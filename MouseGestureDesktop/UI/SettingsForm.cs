@@ -10,7 +10,6 @@ public sealed class SettingsForm : Form
     private readonly ComboBox _button = new() { DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly ComboBox _switchMethod = new() { DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly NumericUpDown _moveThreshold = NumUp(1, 200);
-    private readonly NumericUpDown _stepDistance = NumUp(20, 1000);
     private readonly NumericUpDown _clickMaxDuration = NumUp(50, 2000);
     private readonly NumericUpDown _directionLockRatio = NumUp(1, 5, 1, 0.1m);
     private readonly NumericUpDown _cancelThreshold = NumUp(0, 100);
@@ -71,7 +70,6 @@ public sealed class SettingsForm : Form
         AddRow(grid, "触发侧键", _button);
         AddRow(grid, "切换方式", _switchMethod);
         AddRow(grid, "进入手势阈值 (px)", _moveThreshold);
-        AddRow(grid, "每步距离 (px)", _stepDistance);
         AddRow(grid, "单击判定时长 (ms)", _clickMaxDuration);
         AddRow(grid, "方向锁定比", _directionLockRatio);
         AddRow(grid, "取消阈值 (px)", _cancelThreshold);
@@ -138,7 +136,6 @@ public sealed class SettingsForm : Form
         _button.SelectedIndex = c.Button == TriggerButton.XButton1 ? 0 : 1;
         _switchMethod.SelectedIndex = (int)c.SwitchMethod;
         _moveThreshold.Value = Clamp(_moveThreshold, c.MoveThreshold);
-        _stepDistance.Value = Clamp(_stepDistance, c.StepDistance);
         _clickMaxDuration.Value = Clamp(_clickMaxDuration, c.ClickMaxDuration);
         _directionLockRatio.Value = Clamp(_directionLockRatio, (decimal)c.DirectionLockRatio);
         _cancelThreshold.Value = Clamp(_cancelThreshold, c.CancelThreshold);
@@ -158,7 +155,6 @@ public sealed class SettingsForm : Form
         Button = _button.SelectedIndex == 0 ? TriggerButton.XButton1 : TriggerButton.XButton2,
         SwitchMethod = (SwitchMethod)Math.Max(0, _switchMethod.SelectedIndex),
         MoveThreshold = (int)_moveThreshold.Value,
-        StepDistance = (int)_stepDistance.Value,
         ClickMaxDuration = (int)_clickMaxDuration.Value,
         DirectionLockRatio = (double)_directionLockRatio.Value,
         CancelThreshold = (int)_cancelThreshold.Value,

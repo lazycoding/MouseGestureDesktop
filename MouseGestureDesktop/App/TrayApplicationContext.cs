@@ -37,7 +37,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _notifyIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = LoadAppIcon(),
             Text = "鼠标手势切换桌面",
             Visible = true,
             ContextMenuStrip = menu,
@@ -54,6 +54,16 @@ public sealed class TrayApplicationContext : ApplicationContext
             MessageBox.Show($"无法安装鼠标钩子：{ex.Message}", "MouseGestureDesktop",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    // Load the embedded multi-size icon, picking the frame matching the tray size.
+    private static Icon LoadAppIcon()
+    {
+        var asm = typeof(TrayApplicationContext).Assembly;
+        using var stream = asm.GetManifestResourceStream("MouseGestureDesktop.Resources.app.ico");
+        return stream is null
+            ? SystemIcons.Application
+            : new Icon(stream, SystemInformation.SmallIconSize);
     }
 
     private void OpenSettings()

@@ -11,6 +11,12 @@
     <AssemblyName>MouseGestureDesktop</AssemblyName>
     <RootNamespace>MouseGestureDesktop</RootNamespace>
     <Version>0.1.0</Version>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Embedded so the tray NotifyIcon can load the same icon at runtime. -->
+    <EmbeddedResource Include="Resources\app.ico" />
+  </ItemGroup>
 
 </Project>

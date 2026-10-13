@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-MouseGestureDesktop 是一个 **Windows 系统托盘应用**：按住鼠标侧键（XButton1/2）并水平拖动，即可连续切换 Windows 虚拟桌面；轨迹过程中可绘制覆盖层。无侧键手势时，原有的单击/双击行为被完整保留。
+MouseGestureDesktop 是一个 **Windows 系统托盘应用**：按住鼠标侧键（XButton1/2）水平滑动，松开侧键时按净位移方向切换一次 Windows 虚拟桌面；滑动过程中可绘制轨迹覆盖层。无侧键手势时，原有的单击/双击行为被完整保留。
 
 - 语言 / 框架：C# · .NET 10 · Windows Forms（`net10.0-windows`）
 - 运行形态：无窗口的托盘程序（`WinExe`），单实例（全局 Mutex）
@@ -40,7 +40,7 @@ dotnet run --project MouseGestureDesktop       # 本地运行托盘应用（需 
 数据流：`LowLevelMouseHook` → `GestureController.OnMouseEvent` → `GestureStateMachine` 产出 `GestureAction` → 控制器据此驱动 `IVirtualDesktopSwitcher`、`InputSynthesizer`、`GestureOverlayWindow`。
 
 - **`GestureStateMachine` 必须保持纯净**：只消费坐标/时间戳事件、只返回 `GestureAction`，不得引入任何 Win32 或 UI 调用——这是其可单测的前提。所有副作用留给 `GestureController`。
-- 状态机生命周期：`Idle → Pending →（水平位移超阈值）→ Gesturing`；未触发步进的释放回退为点击，已步进则吞掉点击。
+- 状态机生命周期：`Idle → Pending →（水平位移超阈值）→ Gesturing`；切换只在松开侧键时发生——按净位移方向切换一次（无连续步进）。未锁定即释放回退为点击；滑回起点 `CancelThreshold` 内退回 `Pending`（手势取消 → 释放为点击）。
 - **钩子回调需快速返回**：副作用通过 `_overlay.BeginInvoke(...)` 延迟到 UI 线程执行，避免低级钩子超时被系统摘除。
 - 永不响应自身注入的输入（`e.Injected`）。
 - 虚拟桌面切换：`Auto` 模式优先 COM 内部接口，首次失败后 `FallbackSwitcher` 永久降级到键盘快捷键。

@@ -40,18 +40,6 @@ internal static class TrajectoryRenderer
             }
         }
 
-        // Step ticks: every stepDistance px between origin and the leading edge.
-        int step = Math.Max(1, cfg.StepDistance);
-        using (var tickPen = new Pen(Color.FromArgb(alpha, baseColor), 2f))
-        {
-            int sign = Math.Sign(offset);
-            for (int d = step; d <= Math.Abs(offset); d += step)
-            {
-                int tx = originX + sign * d;
-                g.DrawLine(tickPen, tx, centerY - thickness, tx, centerY + thickness);
-            }
-        }
-
         // Origin marker.
         using (var dot = new SolidBrush(Color.FromArgb(alpha, baseColor)))
         {

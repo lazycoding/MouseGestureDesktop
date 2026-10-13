@@ -8,9 +8,10 @@ namespace MouseGestureDesktop.Gesture;
 /// Contains no Win32 calls so it can be unit-tested with synthetic event sequences.
 ///
 /// Lifecycle: Idle --buttonDown--> Pending --(horizontal travel &gt; threshold)--> Gesturing.
-/// A release that never stepped resolves to a click (preserving single/double click);
-/// a release after stepping suppresses the click. Returning within cancelThreshold before the
-/// first step reverts to Pending (gesture cancel).
+/// Switching is decided only on release: a release while gesturing emits exactly one switch whose
+/// direction is the sign of the net horizontal travel (no continuous stepping). A release that
+/// never locked resolves to a click (preserving single/double click); returning within
+/// cancelThreshold of the origin reverts to Pending (gesture cancel → click on release).
 /// </summary>
 public sealed class GestureStateMachine
 {
@@ -19,8 +20,7 @@ public sealed class GestureStateMachine
     private GestureState _state = GestureState.Idle;
     private Point _origin;
     private long _downTimestamp;
-    private int _stepsFired;      // signed count already emitted along locked axis
-    private bool _firstStepFired;
+    private int _lastOffset;      // latest signed horizontal offset seen while gesturing
 
     public GestureStateMachine(GestureConfig config) => _config = config;
 
@@ -32,8 +32,7 @@ public sealed class GestureStateMachine
     public void Reset()
     {
         _state = GestureState.Idle;
-        _stepsFired = 0;
-        _firstStepFired = false;
+        _lastOffset = 0;
     }
 
     public GestureAction OnButtonDown(Point point, long timestamp)
@@ -45,8 +44,7 @@ public sealed class GestureStateMachine
         _state = GestureState.Pending;
         _origin = point;
         _downTimestamp = timestamp;
-        _stepsFired = 0;
-        _firstStepFired = false;
+        _lastOffset = 0;
         return GestureAction.Swallowed;
     }
 
@@ -61,12 +59,15 @@ public sealed class GestureStateMachine
 
             case GestureState.Gesturing:
                 _state = GestureState.Idle;
-                // Locked but never completed a step → fall back to a click so the button still works.
-                bool emitClick = !_firstStepFired;
+                // Direction is decided here, from the net horizontal travel: exactly one switch.
+                bool movingRight = _lastOffset > 0;
+                if (_config.InvertDirection)
+                    movingRight = !movingRight;
                 return new GestureAction
                 {
                     Swallow = true,
-                    EmitClick = emitClick,
+                    SwitchCount = 1,
+                    SwitchDirection = movingRight ? SwitchDirection.Right : SwitchDirection.Left,
                     Overlay = OverlayPhase.End,
                 };
 
@@ -96,9 +97,16 @@ public sealed class GestureStateMachine
         bool horizontalDominates = Math.Abs(dx) >= _config.DirectionLockRatio * Math.Abs(dy);
         if (Math.Abs(dx) >= _config.MoveThreshold && horizontalDominates)
         {
-            // Lock onto the horizontal axis and start gesturing from this same event.
+            // Lock onto the horizontal axis; from here we only track travel for the overlay —
+            // the switch itself is withheld until release.
             _state = GestureState.Gesturing;
-            return BuildGestureMove(dx, OverlayPhase.Begin);
+            _lastOffset = dx;
+            return new GestureAction
+            {
+                Swallow = _config.FreezeCursorDuringGesture,
+                Overlay = OverlayPhase.Begin,
+                OverlayOffset = dx,
+            };
         }
 
         // Still undecided: let the cursor move freely in case this turns out to be a click.
@@ -109,10 +117,11 @@ public sealed class GestureStateMachine
     {
         int offset = point.X - _origin.X;
 
-        // Gesture cancel: back near origin before any step committed → revert to Pending.
-        if (!_firstStepFired && Math.Abs(offset) <= _config.CancelThreshold)
+        // Gesture cancel: back near origin → revert to Pending so the release resolves to a click.
+        if (Math.Abs(offset) <= _config.CancelThreshold)
         {
             _state = GestureState.Pending;
+            _lastOffset = 0;
             return new GestureAction
             {
                 Swallow = _config.FreezeCursorDuringGesture,
@@ -120,38 +129,12 @@ public sealed class GestureStateMachine
             };
         }
 
-        return BuildGestureMove(offset, OverlayPhase.Update);
-    }
-
-    private GestureAction BuildGestureMove(int offset, OverlayPhase defaultPhase)
-    {
-        int step = Math.Max(1, _config.StepDistance);
-        int desiredSteps = offset / step;              // truncates toward zero, signed
-        int delta = desiredSteps - _stepsFired;
-
-        int switchCount = 0;
-        SwitchDirection direction = SwitchDirection.Right;
-        OverlayPhase phase = defaultPhase;
-
-        if (delta != 0)
-        {
-            switchCount = Math.Abs(delta);
-            bool movingRight = delta > 0;
-            if (_config.InvertDirection)
-                movingRight = !movingRight;
-            direction = movingRight ? SwitchDirection.Right : SwitchDirection.Left;
-
-            _stepsFired = desiredSteps;
-            _firstStepFired = true;
-            phase = OverlayPhase.Step;
-        }
-
+        // Just track travel for visual feedback; no switch happens mid-gesture anymore.
+        _lastOffset = offset;
         return new GestureAction
         {
             Swallow = _config.FreezeCursorDuringGesture,
-            SwitchCount = switchCount,
-            SwitchDirection = direction,
-            Overlay = phase,
+            Overlay = OverlayPhase.Update,
             OverlayOffset = offset,
         };
     }
