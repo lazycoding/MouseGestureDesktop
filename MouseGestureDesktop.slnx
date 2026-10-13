@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MouseGestureDesktop.Tests/MouseGestureDesktop.Tests.csproj" />
+  <Project Path="MouseGestureDesktop/MouseGestureDesktop.csproj" />
+</Solution>
