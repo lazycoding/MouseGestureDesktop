@@ -4,7 +4,10 @@ Windows 10/11 x64 鼠标侧键手势切换虚拟桌面的托盘工具。
 
 ## 下载与运行
 
-在 GitHub 仓库的 **Actions → Windows CI → 成功的运行 → Artifacts** 中下载
+正式版本可在仓库的 **Releases** 页面下载 `MouseGestureDesktop-win-x64-portable.zip`，
+解压后运行其中的 `MouseGestureDesktop.exe`。
+
+开发版本可在 GitHub 仓库的 **Actions → Windows CI → 成功的运行 → Artifacts** 中下载
 `MouseGestureDesktop-win-x64-portable`。解压下载的产物，再解压其中的
 `MouseGestureDesktop-win-x64-portable.zip`，打开目录中的 `MouseGestureDesktop.exe`。
 
@@ -36,3 +39,15 @@ dotnet test MouseGestureDesktop.slnx -c Release
 
 每次 push、拉取请求及手动触发都会执行 CI：构建、测试、发布、打包，
 产物保留 30 天。自包含运行时随包分发，更新运行时需使用新 SDK 重新打包。
+
+## 发布版本
+
+推送 `v` 开头的版本标签（例如 `v0.1.0`）后，CI 在构建、测试、打包全部成功时，
+自动创建对应的 GitHub Release，并上传 ZIP 和 SHA256 校验文件。
+若 Release 已存在，则更新其中的同名附件；重新运行 CI 也可重试上传。
+Release 附件不受 Actions 产物的 30 天保留期限限制。
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
